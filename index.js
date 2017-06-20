@@ -1,26 +1,11 @@
 'use strict';
 
 const CronJob = require('cron').CronJob;
-const fs = require('fs');
-const dir = '/sys/class/gpio';
-const gpio12 = dir + '/gpio12';
-const gpio18 = dir + '/gpio18';
-const gpio21 = dir + '/gpio21';
+const gpio = require('rpi-gpio');
 
-try {
-  fs.writeFileSync(dir + '/unexport', 12);
-  fs.writeFileSync(dir + '/unexport', 18);
-  fs.writeFileSync(dir + '/unexport', 21);
-} catch (err) {
-  console.log('unexport error');
-}
-
-fs.writeFileSync(dir + '/export', 12);
-fs.writeFileSync(gpio12 + '/direction', 'out');
-fs.writeFileSync(dir + '/export', 18);
-fs.writeFileSync(gpio18 + '/direction', 'out');
-fs.writeFileSync(dir + '/export', 21); 
-fs.writeFileSync(gpio21 + '/direction', 'out'); 
+gpio.setup(12, gpio.DIR_OUT);
+gpio.setup(32, gpio.DIR_OUT);
+gpio.setup(40, gpio.DIR_OUT);
 
 const rp = require('request-promise');
 
@@ -37,18 +22,18 @@ let options = {
 
 //new CronJob('* */10 9-22 * * 1-5', () => {
 setInterval(() => {
-  fs.writeFileSync(gpio12 + '/value', '1');
+  gpio.write(32, true);
   rp(options)
     .then((res) => {
       if (res.Feature[0].Property.WeatherList.Weather[0].Rainfall > 0) {
-        fs.writeFileSync(gpio12 + '/value', '0');
-        fs.writeFileSync(gpio21 + '/value', '0');
-        fs.writeFileSync(gpio18 + '/value', '1');
+        gpio.write(12, true);
+        gpio.write(32, false);
+        gpio.write(40, false);
         console.log(new Date() + ' rainny');
       } else {
-        fs.writeFileSync(gpio12 + '/value', '0');
-        fs.writeFileSync(gpio21 + '/value', '1');
-        fs.writeFileSync(gpio18 + '/value', '0');
+        gpio.write(12, false);
+        gpio.write(32, false);
+        gpio.write(40, true);
         console.log(new Date() + ' sunny');
       }
   });
